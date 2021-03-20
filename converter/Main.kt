@@ -1,32 +1,36 @@
 package converter
 
-const val digits = "0123456789ABCDEF"
+import java.math.BigInteger
+
+const val digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 fun main() {
     var command = ""
 
     while (command != "/exit") {
-        print("Do you want to convert /from decimal or /to decimal? (To quit type /exit) ")
-        command = readLine()!!
-        if (command == "/from") {
-            fromDecimal()
-        }
-        if (command == "/to") {
-            toDecimal()
+        command = promptForInput("Enter two numbers in format: {source base} {target base} (To quit type /exit) ")
+        if (command != "/exit") {
+            val (source, target) = command.split(" ")
+            convertMenu(source, target)
         }
     }
 }
 
-fun fromDecimal() {
-    val num = promptForInput("Enter a number in decimal system: ").toInt()
-    val base = promptForInput("Enter the target base: ").toInt()
-    println("Conversion result: ${convertDecimal(num, base)}")
-}
+fun convertMenu(sourceBase: String, targetBase: String) {
+    val source = sourceBase.toInt()
+    val target = targetBase.toInt()
+    var sourceNumber = ""
 
-fun toDecimal() {
-    val num = promptForInput("Enter source number: ").toUpperCase()
-    val base = promptForInput("Enter source base: ").toInt()
-    println("Conversion to decimal result: ${convertNonDecimal(num, base)}")
+    while (sourceNumber != "/back") {
+        sourceNumber = promptForInput("Enter number in base $source to convert to base $target (To go back type /back) ")
+        if (sourceNumber != "/back") {
+            if (source != 10) {
+                println("Conversion result: ${convertDecimal(convertNonDecimal(sourceNumber.toUpperCase(), source), target)}")
+            } else {
+                println("Conversion result: ${convertDecimal(sourceNumber.toBigInteger(), target)}")
+            }
+        }
+    }
 }
 
 fun promptForInput(msg: String) : String {
@@ -37,30 +41,30 @@ fun promptForInput(msg: String) : String {
 /**
  * Perform the conversion from decimal to the requested number base (radix)
  */
-fun convertDecimal(decimal: Int, base: Int): String {
+fun convertDecimal(decimal: BigInteger, base: Int): String {
     var conversion = ""
     var quotient = decimal
 
-    while (quotient > 0) {
-        val remainder = quotient % base
-        quotient /= base
-        conversion += digits[remainder]
+    while (quotient > BigInteger.ZERO) {
+        val (q, r) = quotient.divideAndRemainder(base.toBigInteger())
+        quotient = q
+        conversion += digits[r.toInt()]
     }
 
     return conversion.reversed()
 }
 
 /**
- * Perform the conversion from the supplied base back to decimal
+ * Perform the conversion from the supplied base back to decimal using BigInteger Java class
  */
-fun convertNonDecimal(num: String, base: Int): Int {
-    var conversion = 0
-    var value = 1
+fun convertNonDecimal(num: String, base: Int): BigInteger {
+    var result = BigInteger.ZERO
+    var value = BigInteger.ONE
+    val bigIntBase = base.toBigInteger()
 
     for (index in num.lastIndex downTo 0) {
-        conversion += digits.indexOf(num[index]) * value
-        value *= base
+        result += digits.indexOf(num[index]).toBigInteger() * value
+        value *= bigIntBase
     }
-
-    return conversion
+    return result
 }

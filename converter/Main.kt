@@ -13,7 +13,11 @@ fun main() {
         command = promptForInput("Enter two numbers in format: {source base} {target base} (To quit type /exit) ")
         if (command != "/exit") {
             val (source, target) = command.split(" ")
-            convertMenu(source, target)
+            if ((source.toInt() in 2..36) && (target.toInt() in 2..36)) {
+                convertMenu(source, target)
+            } else {
+                println("Please enter two integers between 2 and 36 separated by a space.")
+            }
         }
     }
 }
@@ -24,21 +28,54 @@ fun convertMenu(sourceBase: String, targetBase: String) {
     var sourceNumber = ""
 
     while (sourceNumber != "/back") {
-        sourceNumber = promptForInput("Enter number in base $source to convert to base $target (To go back type /back) ")
+        sourceNumber =
+            promptForInput("Enter number in base $source to convert to base $target (To go back type /back) ")
         if (sourceNumber != "/back") {
-            val parts = sourceNumber.toUpperCase().split(".")
-            var integer = integerConvertDecimalToRadix(integerConvertRadixToDecimal(parts[0], source), target)
-            if (parts.size == 2) {
-                integer += ".${fractionalConvertDecimalToRadix(fractionalConvertRadixToDecimal(parts[1], source), target)}"
-            }
-            println("Conversion result: $integer")
+            convertNumber(sourceNumber, source, target)
         }
     }
 }
 
-fun promptForInput(msg: String) : String {
+fun promptForInput(msg: String): String {
     print(msg)
-    return readLine()!!
+    return readLine()!!.toLowerCase()
+}
+
+/**
+ * Perform error checking on the source number input to ensure it's valid for the specified base and only has one decimal
+ * point.
+ */
+fun convertNumber(sourceNumber: String, source: Int, target: Int) {
+    val parts = sourceNumber.toUpperCase().split(".")
+
+    // ensure the digits are valid for the source radix
+    for (index in parts.indices) {
+        for (ch in parts[index]) {
+            if (ch !in digits.substring(0..source)) {
+                println("Source number doesn't match the base specified!")
+                return
+            }
+        }
+    }
+
+    // make sure we only have two parts
+    if (parts.size > 2) {
+        println("Invalid number! Only one decimal point allowed.")
+        return
+    }
+
+    var integer: String = sourceNumber
+    if (source != target) { // only convert if our bases are not the same
+        integer = if (parts[0].isNotEmpty()) integerConvertDecimalToRadix(
+            integerConvertRadixToDecimal(parts[0], source),
+            target
+        ) else "0"
+        if (parts.size == 2) {
+            integer += ".${fractionalConvertDecimalToRadix(fractionalConvertRadixToDecimal(parts[1], source), target)}"
+        }
+    }
+    println("Conversion result: $integer")
+
 }
 
 /**
